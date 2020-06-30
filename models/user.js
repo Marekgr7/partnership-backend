@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true, minlength: 8 },
-    owner: { type: mongoose.Types.ObjectId, required: false, ref: 'Owner'},
+    group: { type: mongoose.Types.ObjectId, required: false, ref: 'Group'},
     isOwner: { type: Boolean, required: false}
 });
 

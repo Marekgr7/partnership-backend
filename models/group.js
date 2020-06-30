@@ -3,13 +3,14 @@ const uniqueValidator = require('mongoose-unique-validator');
 
 const Schema = mongoose.Schema;
 
-const ownerSchema = Schema({
+const groupSchema = Schema({
     owner: { type: mongoose.Types.ObjectId, ref: 'User' },
     referralLink: { type: String, required: false, unique: true },
     users: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-    accountsCreatedByRef: [{ type: mongoose.Types.ObjectId, required: false, ref: 'User' }]
+    accountsCreatedByRef: [{ type: mongoose.Types.ObjectId, required: false, ref: 'User' }],
+    isPartnership: { type: Boolean }
 });
 
-ownerSchema.plugin(uniqueValidator);
+groupSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('Owner', ownerSchema);
+module.exports = mongoose.model('Group', groupSchema);
