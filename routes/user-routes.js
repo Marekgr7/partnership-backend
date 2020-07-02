@@ -12,7 +12,10 @@ exports.plugin = {
                 path: '/users/signup/subaccount',
                 options: {
                     description: 'Sign up an subaccount',
-                    handler: authCtrl.signupSubaccount
+                    handler: authCtrl.signupSubaccount,
+                    auth: {
+                        strategy: 'jwt'
+                    }
                 }
             },
             {
@@ -23,7 +26,10 @@ exports.plugin = {
                     // validate: {
                     //     payload: createUserSchema
                     // },
-                    handler: authCtrl.signup
+                    handler: authCtrl.signup,
+                    validate: {
+                        payload: createUserSchema
+                    }
                 }
             },
             {
@@ -33,39 +39,7 @@ exports.plugin = {
                     description: 'Login',
                     handler: authCtrl.login
                 }
-            },
-            {
-                method: 'GET',
-                path: '/users/partnership/{userId}',
-                options: {
-                    description: 'Check partnership of the group',
-                    handler: partnershipCtrl.checkPartnership
-                }
-            },
-            {
-                method: 'GET',
-                path: '/users/referral/{userId}',
-                options: {
-                    description: 'Returns ref link',
-                    handler: partnershipCtrl.getRefLink
-                }
-            },
-            {
-                method: 'GET',
-                path: '/users/accounts-referred/{userId}',
-                options: {
-                    description: 'Returns list of referred users',
-                    handler: partnershipCtrl.getRefAccounts
-                }
-            },
-            {
-                method: 'POST',
-                path: '/users/partnership',
-                options: {
-                    description: 'set partnership of group',
-                    handler: partnershipCtrl.setPartnership
-                }
-            },
+            }
         ]);
     },
     version: require('../package.json').version,

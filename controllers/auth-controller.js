@@ -17,11 +17,11 @@ const checkIfUserExist = async (email) => {
     try {
         existingUser = await User.findOne({email: email});
     } catch (err) {
-        throw Boom.badImplementation('Could not create an account, please try again later');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
     }
 
     if (existingUser) {
-        throw Boom.forbidden('User already exists. Please log in instead');
+        throw Boom.forbidden('Użytkownik już istnieje. Zaloguj się !');
     }
 }
 
@@ -30,14 +30,18 @@ const hashPassword = async (password) => {
     try {
         hashedPassword = await bcrypt.hash(password, 12);
     } catch (err) {
-        throw Boom.badImplementation('Could not create an account, please try again later');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
     }
     return hashedPassword;
 };
 
 
 const signup = async (req, h) => {
-    const {email, password, referralLink, isPartnership} = req.payload;
+    let {email, password, referralLink, isPartnership} = req.payload;
+
+    if (isPartnership === undefined) {
+        isPartnership = false;
+    }
 
     console.log(email);
     console.log(password);
@@ -49,7 +53,11 @@ const signup = async (req, h) => {
         try {
             refGroup = await Group.findOne({ referralLink });
         } catch (error) {
-            throw Boom.badImplementation('Could not create an account, please try again');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
+        }
+
+        if(!refGroup) {
+            throw Boom.notFound('Link do poleceń jest nie prawidłowy !');
         }
 
         await checkIfUserExist(email);
@@ -66,7 +74,7 @@ const signup = async (req, h) => {
         try {
             refLink = generateRefLink();
         } catch (err) {
-            throw Boom.badImplementation('Could not create an account, please try again later');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         const newGroup = new Group({
@@ -76,39 +84,39 @@ const signup = async (req, h) => {
             accountsCreatedByRef: [],
             isPartnership
         });
+
         try {
             const sess = await mongoose.startSession();
             sess.startTransaction();
             await createdUser.save({session: sess});
             refGroup.accountsCreatedByRef.push(createdUser);
             await refGroup.save({session: sess});
-
+            newGroup.users.push(createdUser._id);
             newGroup.owner = createdUser._id;
             await newGroup.save({session: sess});
+            createdUser.group = newGroup._id;
+            await createdUser.save({ session: sess });
             await sess.commitTransaction();
-
         } catch (err) {
-            throw Boom.badImplementation('Could not create an user please try again');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         let token;
         try {
             token = createToken(createdUser);
         } catch (err) {
-            throw Boom.badImplementation('Could not log you in. Please try again later');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         return {
-            user: createdUser._id,
+            userId: createdUser.id,
             email: createdUser.email,
             token: token,
             isPartnership: newGroup.isPartnership,
-            isOwner: true,
+            isOwner: true
         };
 
     } else {
-
-        console.log('negative if');
 
         await checkIfUserExist(email);
 
@@ -125,7 +133,7 @@ const signup = async (req, h) => {
         try {
             refLink = generateRefLink();
         } catch (err) {
-            throw Boom.badImplementation('Could not create an account, please try again later');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         const newGroup = new Group({
@@ -148,27 +156,25 @@ const signup = async (req, h) => {
             createdUser.group = newGroup._id;
             await createdUser.save({ session: sess });
             await sess.commitTransaction();
-
         } catch (err) {
             console.log(err);
-            throw Boom.badImplementation('Could not create an user please try again');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         let token;
         try {
             token = createToken(createdUser);
         } catch (err) {
-            throw Boom.badImplementation('Could not log you in. Please try again later');
+            throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
         }
 
         return {
-            user: createdUser._id,
+            userId: createdUser.id,
             email: createdUser.email,
             token: token,
             isPartnership: newGroup.isPartnership,
             isOwner: true
         };
-
     }
 };
 
@@ -180,11 +186,11 @@ const signupSubaccount = async (req, h) => {
     try {
         existingUser = await User.findOne({email: email});
     } catch (err) {
-        throw Boom.badImplementation('Could not create an account, please try again later');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
     }
 
     if (existingUser) {
-        throw Boom.forbidden('User already exists. Could not register new account');
+        throw Boom.forbidden('Podany email jest zajęty ');
     }
 
     let hashedPassword;
@@ -192,7 +198,7 @@ const signupSubaccount = async (req, h) => {
     try {
         hashedPassword = await bcrypt.hash(password, 12);
     } catch (err) {
-        throw Boom.badImplementation('Could not create an account, please try again later');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
     }
 
 
@@ -200,7 +206,11 @@ const signupSubaccount = async (req, h) => {
     try {
         group = await Group.findOne({owner: ownerId});
     } catch (err) {
-        throw Boom.notFound('Cannot create an account. Please try again');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
+    }
+
+    if (!group) {
+        throw Boom.notFound('Wystapił problem. Proszę spróbuj ponownie');
     }
 
     const createdUser = new User({
@@ -220,7 +230,7 @@ const signupSubaccount = async (req, h) => {
         await sess.commitTransaction();
     } catch (err) {
         console.log(err);
-        throw Boom.badImplementation('Cannot create an account, please try again');
+        throw Boom.badImplementation('Wystapił problem. Proszę spróbuj ponownie');
     }
 
     return {user: createdUser._id, email: createdUser.email};
@@ -236,31 +246,31 @@ const login = async (req, h) => {
     try {
         existingUser = await User.findOne({ email: email }).populate('group');
     } catch (err) {
-        throw Boom.badImplementation('Logging in failed, Please try again later');
+        throw Boom.badImplementation('Logowanie nie powiodło się. Prosze spróbuj ponownie');
     }
 
     console.log(existingUser.group);
 
     if (!existingUser) {
-        throw Boom.forbidden('Invalid credentials, could not log you in');
+        throw Boom.forbidden('Błedny login lub hasło. Spróbuj ponownie');
     }
 
     let isValidPassword = false;
     try {
         isValidPassword = await bcrypt.compare(password, existingUser.password);
     } catch (err) {
-        throw Boom.badImplementation('Could not log you in. Please try again later');
+        throw Boom.badImplementation('Logowanie nie powiodło się. Prosze spróbuj ponownie');
     }
 
     if (!isValidPassword) {
-        throw Boom.forbidden('Invalid credentials, could not log you in');
+        throw Boom.forbidden('Błedny login lub hasło. Spróbuj ponownie');
     }
 
     let token;
     try {
         token = createToken(existingUser);
     } catch (err) {
-        throw Boom.badImplementation('Could not log you in. Please try again later');
+        throw Boom.badImplementation('Logowanie nie powiodło się. Prosze spróbuj ponownie');
     }
     return {
         userId: existingUser.id,

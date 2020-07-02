@@ -13,11 +13,11 @@ const checkPartnership = async (req, h) => {
         existingUser = await User.findById(userId).populate('group');
         console.log(existingUser.group);
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     if (!existingUser) {
-        throw Boom.notFound("User not found. Please try again");
+        throw Boom.notFound("Nie znaleziono użytkownika. Proszę spróbuj ponownie");
     }
 
     return {
@@ -32,11 +32,11 @@ const getRefLink = async (req, h) => {
     try {
         existingUser = await User.findById(userId).populate('group');
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     if (!existingUser) {
-        throw Boom.notFound("User not found. Please try again");
+        throw Boom.notFound("Nie znaleziono użytkownika. Proszę spróbuj ponownie");
     }
 
     return {
@@ -54,11 +54,11 @@ const getRefAccounts = async (req, h) => {
         group = existingUser.group;
         console.log(existingUser.group.accountsCreatedByRef);
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     if (!existingUser) {
-        throw Boom.notFound("User not found. Please try again");
+        throw Boom.notFound("Nie znaleziono użytkownika. Proszę spróbuj ponownie");
     }
 
     let accountsToSend = [];
@@ -69,7 +69,7 @@ const getRefAccounts = async (req, h) => {
             accountsToSend.push(user.email);
         }
     } catch (err) {
-      throw Boom.badImplementation("Something went wrong. Please try again");
+      throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     return {
@@ -84,14 +84,14 @@ const setPartnership = async (req, h) => {
     try {
         existingUser = await User.findById(userId, '-password');
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong. Please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     let existingGroup;
     try {
         existingGroup = await Group.findById(existingUser.group);
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong. Please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     existingGroup.isPartnership = partnershipToSet;
@@ -99,7 +99,7 @@ const setPartnership = async (req, h) => {
     try {
         existingGroup.save();
     } catch (err) {
-        throw Boom.badImplementation("Something went wrong. Please try again");
+        throw Boom.badImplementation("Wystapił problem. Proszę spróbuj ponownie");
     }
 
     return {
