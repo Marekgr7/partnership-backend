@@ -10,7 +10,8 @@ const checkPartnership = async (req, h) => {
 
     let existingUser;
     try {
-        existingUser = await User.findById(userId);
+        existingUser = await User.findById(userId).populate('group');
+        console.log(existingUser.group);
     } catch (err) {
         throw Boom.badImplementation("Something went wrong please try again");
     }
@@ -19,19 +20,8 @@ const checkPartnership = async (req, h) => {
         throw Boom.notFound("User not found. Please try again");
     }
 
-    let group;
-    try {
-        group = await Group.findById(existingUser.group);
-    } catch (err) {
-        throw Boom.badImplementation("Something went wrong please try again");
-    }
-
-    if (!existingUser) {
-        throw Boom.notFound("Company not found. Please try again");
-    }
-
     return {
-        isPartnership: group.isPartnership
+        isPartnership: existingUser.group.isPartnership
     };
 };
 
@@ -40,7 +30,7 @@ const getRefLink = async (req, h) => {
 
     let existingUser;
     try {
-        existingUser = await User.findById(userId);
+        existingUser = await User.findById(userId).populate('group');
     } catch (err) {
         throw Boom.badImplementation("Something went wrong please try again");
     }
@@ -49,23 +39,77 @@ const getRefLink = async (req, h) => {
         throw Boom.notFound("User not found. Please try again");
     }
 
+    return {
+      referral: existingUser.group.referralLink
+    };
+};
+
+const getRefAccounts = async (req, h) => {
+    const userId = req.params.userId;
+
+    let existingUser;
     let group;
     try {
-        group = await Group.findById(existingUser.group);
+        existingUser = await User.findById(userId).populate('group');
+        group = existingUser.group;
+        console.log(existingUser.group.accountsCreatedByRef);
     } catch (err) {
         throw Boom.badImplementation("Something went wrong please try again");
     }
 
-    if (!group) {
-        throw Boom.notFound("Company not found. Please try again");
+    if (!existingUser) {
+        throw Boom.notFound("User not found. Please try again");
+    }
+
+    let accountsToSend = [];
+    let user;
+    try {
+        for (let userId of group.accountsCreatedByRef) {
+            user = await User.findById(userId, '-password');
+            accountsToSend.push(user.email);
+        }
+    } catch (err) {
+      throw Boom.badImplementation("Something went wrong. Please try again");
     }
 
     return {
-      referral: group.referralLink
+        refAccounts: accountsToSend
+    }
+};
+
+const setPartnership = async (req, h) => {
+    const { partnershipToSet, userId } = req.payload;
+
+    let existingUser;
+    try {
+        existingUser = await User.findById(userId, '-password');
+    } catch (err) {
+        throw Boom.badImplementation("Something went wrong. Please try again");
+    }
+
+    let existingGroup;
+    try {
+        existingGroup = await Group.findById(existingUser.group);
+    } catch (err) {
+        throw Boom.badImplementation("Something went wrong. Please try again");
+    }
+
+    existingGroup.isPartnership = partnershipToSet;
+
+    try {
+        existingGroup.save();
+    } catch (err) {
+        throw Boom.badImplementation("Something went wrong. Please try again");
+    }
+
+    return {
+        isPartnership: existingGroup.isPartnership
     };
 };
 
 exports.checkPartnership = checkPartnership;
 exports.getRefLink = getRefLink;
+exports.getRefAccounts = getRefAccounts;
+exports.setPartnership = setPartnership;
 
 

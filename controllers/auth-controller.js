@@ -98,7 +98,13 @@ const signup = async (req, h) => {
             throw Boom.badImplementation('Could not log you in. Please try again later');
         }
 
-        return {user: createdUser._id, email: createdUser.email, token: token};
+        return {
+            user: createdUser._id,
+            email: createdUser.email,
+            token: token,
+            isPartnership: newGroup.isPartnership,
+            isOwner: true,
+        };
 
     } else {
 
@@ -155,7 +161,13 @@ const signup = async (req, h) => {
             throw Boom.badImplementation('Could not log you in. Please try again later');
         }
 
-        return {user: createdUser._id, email: createdUser.email, token: token};
+        return {
+            user: createdUser._id,
+            email: createdUser.email,
+            token: token,
+            isPartnership: newGroup.isPartnership,
+            isOwner: true
+        };
 
     }
 };
@@ -195,15 +207,16 @@ const signupSubaccount = async (req, h) => {
         email,
         password: hashedPassword,
         isOwner: false,
-        group: group
+        group: group._id
     });
+
 
     try {
         const sess = await mongoose.startSession();
         sess.startTransaction();
-        await createdUser.save({session: sess});
-        owner.users.push(createdUser._id);
-        await owner.save({session: sess});
+        await createdUser.save({ session: sess });
+        group.users.push(createdUser._id);
+        await group.save( {session: sess });
         await sess.commitTransaction();
     } catch (err) {
         console.log(err);
@@ -217,12 +230,16 @@ const signupSubaccount = async (req, h) => {
 const login = async (req, h) => {
     const {email, password} = req.payload;
 
+    console.log('loginng');
+
     let existingUser;
     try {
-        existingUser = await User.findOne({email: email});
+        existingUser = await User.findOne({ email: email }).populate('group');
     } catch (err) {
         throw Boom.badImplementation('Logging in failed, Please try again later');
     }
+
+    console.log(existingUser.group);
 
     if (!existingUser) {
         throw Boom.forbidden('Invalid credentials, could not log you in');
@@ -248,13 +265,12 @@ const login = async (req, h) => {
     return {
         userId: existingUser.id,
         email: existingUser.email,
-        token: token
+        token: token,
+        isPartnership: existingUser.group.isPartnership,
+        isOwner: existingUser.isOwner
     };
 };
 
-const checkPartnership = async (req, h) => {
-
-}
 
 exports.signup = signup;
 exports.signupSubaccount = signupSubaccount;
